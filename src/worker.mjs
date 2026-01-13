@@ -356,13 +356,16 @@ const transformFnResponse = ({ content, tool_call_id }, parts) => {
   let response;
   try {
     response = JSON.parse(content);
+    // 如果解析成功但不是对象，包装一下
+    if (typeof response !== "object" || response === null || Array.isArray(response)) {
+      response = { result: response };
+    }
   } catch (err) {
-    console.error("Error parsing function response content:", err);
-    throw new HttpError("Invalid function response: " + content, 400);
+    // JSON 解析失败，将纯文本包装成对象
+    console.warn("Function response is not JSON, wrapping as text:", content);
+    response = { result: content };  // ← 关键修改
   }
-  if (typeof response !== "object" || response === null || Array.isArray(response)) {
-    response = { result: response };
-  }
+  
   if (!tool_call_id) {
     throw new HttpError("tool_call_id not specified", 400);
   }
